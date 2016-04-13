@@ -10,11 +10,16 @@
   please support Adafruit and open-source hardware by purchasing
   products from Adafruit!
 
+  If you're using multiple sensors, or you just want to change the I2C address
+  to something else, you can choose from
+  5 different options - 0x28, 0x29 (default), 0x2A, 0x2B, 0x2C and 0x2D
+
   Written by Limor Fried/Ladyada for Adafruit Industries.
   BSD license, all text above must be included in any redistribution
+  **** THIS LIBRARY ONLY IMPLEMENTS IC2 PROTOCOL ****
  ****************************************************/
 
-#include "Adafruit_CAP1188.h"
+#include "Adafruit-CAP1188.h"
 
 uint8_t mySPCR, SPCRback;
 
@@ -24,8 +29,7 @@ Adafruit_CAP1188::Adafruit_CAP1188(int8_t resetpin) {
   _i2c = true;
 }
 
-Adafruit_CAP1188::Adafruit_CAP1188(int8_t cspin, int8_t resetpin) {
-  // Hardware SPI
+åç  // Hardware SPI
   _cs = cspin;
   _resetpin = resetpin;
   _clk = -1;
@@ -33,8 +37,8 @@ Adafruit_CAP1188::Adafruit_CAP1188(int8_t cspin, int8_t resetpin) {
 }
 
 Adafruit_CAP1188::Adafruit_CAP1188(int8_t clkpin, int8_t misopin,
-				   int8_t mosipin,int8_t cspin,
-				   int8_t resetpin) {
+           int8_t mosipin,int8_t cspin,
+           int8_t resetpin) {
   // Software SPI
   _cs = cspin;
   _resetpin = resetpin;
@@ -49,22 +53,6 @@ boolean Adafruit_CAP1188::begin(uint8_t i2caddr) {
     Wire.begin();
 
     _i2caddr = i2caddr;
-  } else if (_clk == -1) {
-    // Hardware SPI
-    digitalWrite(_cs, HIGH);
-    SPCRback = SPCR;
-    SPI.begin();
-    SPI.setClockDivider(SPI_CLOCK_DIV8);
-    SPI.setDataMode(SPI_MODE0);
-    mySPCR = SPCR;
-    SPCR = SPCRback;
-  } else {
-    // Sofware SPI
-    pinMode(_clk, OUTPUT);
-    pinMode(_mosi, OUTPUT);
-    pinMode(_cs, OUTPUT);
-    digitalWrite(_cs, HIGH);
-    digitalWrite(_clk, HIGH);
   }
 
   if (_resetpin != -1) {
@@ -81,13 +69,12 @@ boolean Adafruit_CAP1188::begin(uint8_t i2caddr) {
 
   // Useful debugging info
 
-  Serial.print("Product ID: 0x");
-  Serial.println(readRegister(CAP1188_PRODID), HEX);
-  Serial.print("Manuf. ID: 0x");
-  Serial.println(readRegister(CAP1188_MANUID), HEX);
-  Serial.print("Revision: 0x");
-  Serial.println(readRegister(CAP1188_REV), HEX);
-
+  // Serial.print("Product ID: 0x");
+  // Serial.println(readRegister(CAP1188_PRODID), HEX);
+  // Serial.print("Manuf. ID: 0x");
+  // Serial.println(readRegister(CAP1188_MANUID), HEX);
+  // Serial.print("Revision: 0x");
+  // Serial.println(readRegister(CAP1188_REV), HEX);
 
   if ( (readRegister(CAP1188_PRODID) != 0x50) ||
        (readRegister(CAP1188_MANUID) != 0x5D) ||
@@ -95,11 +82,31 @@ boolean Adafruit_CAP1188::begin(uint8_t i2caddr) {
     return false;
   }
   // allow multiple touches
-  writeRegister(CAP1188_MTBLK, 0);
+  writeRegister(CAP1188_MTBLK,0);//
   // Have LEDs follow touches
   writeRegister(CAP1188_LEDLINK, 0xFF);
   // speed up a bit
   writeRegister(CAP1188_STANDBYCFG, 0x30);
+  // we change sensitivity here
+  // writeRegister(CAP188_SENSITIVYCONTROL, 0x50);// ideal sensitivity without ground
+
+  // setSensitivity(1);
+  // writeRegister(CAP188_SENSITIVYCONTROL, 0x70);
+  // Serial.print("Sensitivity in BIN: ");
+  // Serial.println(readRegister(CAP188_SENSITIVYCONTROL), BIN);
+
+  // Serial.print("Sensitivity: 0x");
+  // Serial.println(readRegister(CAP1188_SENSITIVITY), HEX);
+
+  // Serial.print("MultiTouch: 0x");
+  // Serial.println(readRegister(CAP1188_MTBLK), HEX);
+  //BIT DECODE for number of samples taken
+  // Serial.print("bit decode samples taken: 0x");
+  // Serial.println(readRegister(CAP1188_STANDBYCFG), HEX);
+
+  // writeRegister(CAP188_SENSITIVYCONTROL, 0x30);
+
+
   return true;
 }
 
@@ -109,42 +116,40 @@ void Adafruit_CAP1188::setSensitivity(int sensitivity){
 
     //least sensitive
     case 1:
-      writeRegister(CAP1188_SENSITIVITY,0x7);
+      writeRegister(CAP188_SENSITIVYCONTROL,0x70);
       break;
-
     case 2:
-      writeRegister(CAP1188_SENSITIVITY,0x6);
+      writeRegister(CAP188_SENSITIVYCONTROL,0x60);
       break;
-
     case 3:
-      writeRegister(CAP1188_SENSITIVITY,0x5);
+      writeRegister(CAP188_SENSITIVYCONTROL,0x50);
       break;
-
     case 4:
-      writeRegister(CAP1188_SENSITIVITY,0x4);
+      writeRegister(CAP188_SENSITIVYCONTROL,0x40);
       break;
-
     case 5:
-      writeRegister(CAP1188_SENSITIVITY,0x3);
+      writeRegister(CAP188_SENSITIVYCONTROL,0x30);
       break;
-
     case 6:
-      writeRegister(CAP1188_SENSITIVITY,0x2);
+      writeRegister(CAP188_SENSITIVYCONTROL,0x20);
+      break;
+    case 7:
+      writeRegister(CAP188_SENSITIVYCONTROL,0x10);
       break;
     //most sensitive
-    case 7:
-      writeRegister(CAP1188_SENSITIVITY,0x1);
+    case 8:
+      writeRegister(CAP188_SENSITIVYCONTROL, 0);
       break;
   }
 
   //Let's read how sensible the sensor is
-  Serial.print("Sensitivity: 0x");
-  Serial.println(readRegister(CAP1188_SENSITIVITY), HEX);
+  Serial.print("Sensitivity in HEX: 0x");
+  Serial.println(readRegister(CAP188_SENSITIVYCONTROL), HEX);
 
 }
 
 uint8_t  Adafruit_CAP1188::touched(void) {
-  uint8_t t = readRegister(CAP1188_SENINPUTSTATUS);
+  uint8_t t = readRegister(CAP1188_SENINPUTSTATUS);// we call the input status which will return yes and no values for all th elements
   if (t) {
     writeRegister(CAP1188_MAIN, readRegister(CAP1188_MAIN) & ~CAP1188_MAIN_INT);
   }
@@ -171,11 +176,7 @@ void Adafruit_CAP1188::LEDpolarity(uint8_t x) {
 */
 /**************************************************************************/
 static uint8_t i2cread(void) {
-  #if ARDUINO >= 100
   return Wire.read();
-  #else
-  return Wire.receive();
-  #endif
 }
 
 /**************************************************************************/
@@ -184,11 +185,7 @@ static uint8_t i2cread(void) {
 */
 /**************************************************************************/
 static void i2cwrite(uint8_t x) {
-  #if ARDUINO >= 100
   Wire.write((uint8_t)x);
-  #else
-  Wire.send(x);
-  #endif
 }
 
 /**************************************************************************/
@@ -209,7 +206,7 @@ uint8_t Adafruit_CAP1188::spixfer(uint8_t data) {
       digitalWrite(_mosi, data & (1<<i));
       digitalWrite(_clk, HIGH);
       if (digitalRead(_miso))
-	reply |= 1;
+  reply |= 1;
     }
     return reply;
   }
@@ -220,26 +217,8 @@ uint8_t Adafruit_CAP1188::readRegister(uint8_t reg) {
     Wire.beginTransmission(_i2caddr);
     i2cwrite(reg);
     Wire.endTransmission();
-    Wire.requestFrom(_i2caddr, 1);
+    Wire.requestFrom(_i2caddr, 1);//requests the first value of the given address
     return (i2cread());
-  } else {
-    if (_clk == -1) {
-      SPCRback = SPCR;
-      SPCR = mySPCR;
-    }
-    digitalWrite(_cs, LOW);
-    // set address
-    spixfer(0x7D);
-    spixfer(reg);
-    digitalWrite(_cs, HIGH);
-    digitalWrite(_cs, LOW);
-    spixfer(0x7F);
-    uint8_t reply = spixfer(0);
-    digitalWrite(_cs, HIGH);
-    if (_clk == -1) {
-      SPCR = SPCRback;
-    }
-    return reply;
   }
 }
 
@@ -255,22 +234,5 @@ void Adafruit_CAP1188::writeRegister(uint8_t reg, uint8_t value) {
     i2cwrite((uint8_t)reg);
     i2cwrite((uint8_t)(value));
     Wire.endTransmission();
-  } else {
-    if (_clk == -1) {
-      SPCRback = SPCR;
-      SPCR = mySPCR;
-    }
-    digitalWrite(_cs, LOW);
-    // set address
-    spixfer(0x7D);
-    spixfer(reg);
-    digitalWrite(_cs, HIGH);
-    digitalWrite(_cs, LOW);
-    spixfer(0x7E);
-    spixfer(value);
-    digitalWrite(_cs, HIGH);
-    if (_clk == -1) {
-      SPCR = SPCRback;
-    }
   }
 }

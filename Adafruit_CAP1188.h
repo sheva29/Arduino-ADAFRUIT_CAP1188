@@ -40,7 +40,7 @@
 //newly added
 #define CAP1188_ANALOGID 0x10// returns analog values
 #define CAP1188_SENSITIVITY 0x42// controls sensitivity
-
+#define CAP188_SENSITIVYCONTROL 0x1F// controls sensitivity as well
 
 class Adafruit_CAP1188 {
  public:
